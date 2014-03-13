@@ -1,0 +1,4 @@
+* Implement support for USB2000 and USB4000 spectrometers
+* Improve performance, currently we have a lot of unnecessary
+  memset and memcpy operations. Maybe we can drop the raw buffer
+  store as well.
