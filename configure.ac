@@ -1,7 +1,7 @@
 dnl required version of autoconf
 AC_PREREQ([2.60])
 
-AC_INIT([libocean], [0.1.0], [soeren.grunewald@desy.de])
+AC_INIT([libocean], [0.1.1], [soeren.grunewald@desy.de])
 
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_SRCDIR([Makefile.am])
