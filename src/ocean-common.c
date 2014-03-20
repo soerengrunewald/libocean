@@ -345,7 +345,7 @@ int ocean_create(struct ocean **oceanp)
 	if (ret != 0)
 		return -ENODEV;
 
-	libusb_set_debug(ctx->usb, LIBUSB_LOG_LEVEL_INFO);
+//	libusb_set_debug(ctx->usb, LIBUSB_LOG_LEVEL_INFO);
 
 	*oceanp = ctx;
 	return 0;
@@ -418,6 +418,7 @@ int ocean_open(struct ocean *self, uint16_t vendor, uint16_t product)
 	/* apply the device specific endpoint settings */
 	ocean_set_endpoints_for(self, vendor, product);
 
+/*
 	ret = libusb_set_auto_detach_kernel_driver(self->dev, true);
 	if (ret < 0) {
 		fprintf(stderr, "ERR: libusb_set_auto_detach_kernel_driver: %s\n",
@@ -425,6 +426,7 @@ int ocean_open(struct ocean *self, uint16_t vendor, uint16_t product)
 		return -EIO;
 	}
 
+*/
 	/* select the right usb configuration, for now we leave the
 	 * configuration default, for some unknown reason, setting the
 	 * configuration to 1 will cause the device stop working. */
