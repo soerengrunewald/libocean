@@ -1,5 +1,7 @@
-Release x.y.z (YYYY-MM-DD)
+Release 0.1.2 (2014-03-20)
 ==========================
+- Fix build on Ubuntu 12.04.4 LTS
+- Fix suppling of dummy data
 
 Release 0.1.0 (2014-03-13)
 ==========================
