@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
 		goto out;
 	}
 
-	ret = ocean_open(usb, 0x2457, 0x1026);
+	ret = ocean_open(usb, 0x2457, 0x1022);
 	if (ret < 0) {
 		printf("ocean_open: %d\n", ret);
 		goto out;

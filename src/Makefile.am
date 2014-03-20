@@ -9,7 +9,8 @@ noinst_HEADERS = \
 
 libocean_la_SOURCES = \
 	ocean-common.c \
-	ocean-nirquest.c
+	ocean-nirquest.c \
+	ocean-usb4000.c
 
 libocean_la_CFLAGS = \
 	$(LIBUSB_CFLAGS)

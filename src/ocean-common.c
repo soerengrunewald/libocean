@@ -11,10 +11,21 @@ struct devices {
 };
 
 extern int nirquest512_recv_spectra(struct ocean *, struct ocean_spectra *);
+extern int usb4000_recv_spectra(struct ocean *, struct ocean_spectra *);
 
 /* FIXME: This is device specific... */
 static const struct devices SUPPORTED[] = {
-	{
+	{ /* OceanOptics USB4000 */
+		.vendor = 0x2457,
+		.product = 0x1022,
+		.endpoint = {
+			(0x01 | LIBUSB_ENDPOINT_OUT),
+			(0x81 | LIBUSB_ENDPOINT_IN),
+			(0x86 | LIBUSB_ENDPOINT_IN),
+			(0x82 | LIBUSB_ENDPOINT_IN),
+		},
+		.receive = usb4000_recv_spectra,
+	}, { /* OceanOptics NirQuest512 */
 		.vendor = 0x2457,
 		.product = 0x1026,
 		.endpoint = {
@@ -608,18 +619,23 @@ int ocean_get_temperature(struct ocean *self, float *pcb, float *sink)
 api_public
 int ocean_set_integration_time(struct ocean *self, uint32_t time)
 {
-	uint8_t cmd[] = { 0x02,
-		(time >>  0) & 0xFF, (time >>  8) & 0xFF,
-		(time >> 16) & 0xFF, (time >> 24) & 0xFF
-	};
+	uint8_t cmd[] = { 0x02, 0x00, 0x00, 0x00, 0x00 };
 	int ret;
 
-	/* FIXME: convert this properly depending on cpu
-	 * Check if libusb_le16_to_cpu or libusb_cpu_to_le16 are usable
+	/* Depending on device, the integration time is given
+	 * in µs or ms. So we need to apply a correction factor */
+	if (self->receive == usb4000_recv_spectra) {
+		printf("DBG: integration time given in ms, but need µm\n");
+		time *= 1000;
+	}
+
+	/* FIXME: convert this properly depending on cpu */
+	/* TODO: Check if libusb_le16_to_cpu or libusb_cpu_to_le16
+	 *       can be used here */
 	cmd[1] = (time >>  0) & 0xFF;
 	cmd[2] = (time >>  8) & 0xFF;
 	cmd[3] = (time >> 16) & 0xFF;
-	cmd[4] = (time >> 24) & 0xFF;*/
+	cmd[4] = (time >> 24) & 0xFF;
 
 	ret = ocean_send_command(self, cmd, ARRAY_SIZE(cmd));
 	if (ret < 0)
