@@ -67,7 +67,6 @@ static void hexdump(uint8_t *buf, size_t len, const char *prefix)
 }
 
 extern int ocean_recv_spectra(struct ocean *self, struct ocean_spectra *spec);
-extern void ocean_spectra_apply_coefficents(struct ocean_spectra *spec);
 
 static int ocean_query_dev_info(struct ocean *self, uint8_t what, uint8_t *buf, size_t len);
 static int ocean_query_status(struct ocean *self, struct ocean_status *status);
@@ -718,7 +717,6 @@ int ocean_request_spectra(struct ocean *self, struct ocean_spectra *spec)
 	if (ret < 0)
 		return -ENODATA;
 
-	ocean_spectra_apply_coefficents(spec);
 	return 0;
 }
 
