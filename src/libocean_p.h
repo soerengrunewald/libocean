@@ -37,11 +37,15 @@
 extern "C" {
 #endif
 
+typedef int (*ReceiveFuncPtr)(struct ocean *, struct ocean_spectra *);
+
 struct ocean {
 	libusb_context *usb;
 	libusb_device_handle *dev;
 	uint8_t ep[4];
 	int timeout;
+	/* The function used to receive requested specrtra data */
+	ReceiveFuncPtr receive;
 };
 
 struct ocean_spectra {

@@ -6,7 +6,11 @@ struct devices {
 	uint16_t vendor;
 	uint16_t product;
 	uint8_t endpoint[4];
+	/* function to receive data from the spectrometer */
+	ReceiveFuncPtr receive;
 };
+
+extern int nirquest512_recv_spectra(struct ocean *, struct ocean_spectra *);
 
 /* FIXME: This is device specific... */
 static const struct devices SUPPORTED[] = {
@@ -18,7 +22,8 @@ static const struct devices SUPPORTED[] = {
 			(0x81 | LIBUSB_ENDPOINT_IN),
 			(0x82 | LIBUSB_ENDPOINT_IN),
 			0
-		}
+		},
+		.receive = nirquest512_recv_spectra,
 	}, {
 		.vendor = 0x2457,
 		.product = 0x1028,
@@ -27,8 +32,9 @@ static const struct devices SUPPORTED[] = {
 			(0x81 | LIBUSB_ENDPOINT_IN),
 			(0x82 | LIBUSB_ENDPOINT_IN),
 			0
-		}
-	},
+		},
+		.receive = nirquest512_recv_spectra,
+	}
 };
 
 static void hexdump(uint8_t *buf, size_t len, const char *prefix)
@@ -65,8 +71,6 @@ static void hexdump(uint8_t *buf, size_t len, const char *prefix)
 		fprintf(fp, " |\n");
 	}
 }
-
-extern int ocean_recv_spectra(struct ocean *self, struct ocean_spectra *spec);
 
 static int ocean_query_dev_info(struct ocean *self, uint8_t what, uint8_t *buf, size_t len);
 static int ocean_query_status(struct ocean *self, struct ocean_status *status);
@@ -380,8 +384,9 @@ static int ocean_supports(uint16_t vendor, uint16_t product)
 	return false;
 }
 
-static void ocean_set_endpoints_for(struct ocean *self, uint16_t vendor,
-				    uint16_t product)
+static void ocean_set_device_specifics_for(struct ocean *self,
+					   uint16_t vendor,
+					   uint16_t product)
 {
 	unsigned i;
 
@@ -389,6 +394,7 @@ static void ocean_set_endpoints_for(struct ocean *self, uint16_t vendor,
 		if (vendor == SUPPORTED[i].vendor &&
 		    product == SUPPORTED[i].product) {
 			memcpy(self->ep, &SUPPORTED[i].endpoint, ARRAY_SIZE(self->ep));
+			self->receive = SUPPORTED[i].receive;
 			break;
 		}
 	}
@@ -414,8 +420,8 @@ int ocean_open(struct ocean *self, uint16_t vendor, uint16_t product)
 		return -ENODEV;
 	}
 
-	/* apply the device specific endpoint settings */
-	ocean_set_endpoints_for(self, vendor, product);
+	/* apply the device specific settings */
+	ocean_set_device_specifics_for(self, vendor, product);
 
 /*
 	ret = libusb_set_auto_detach_kernel_driver(self->dev, true);
@@ -713,7 +719,7 @@ int ocean_request_spectra(struct ocean *self, struct ocean_spectra *spec)
 	if (ret < 0)
 		return -EIO;
 
-	ret = ocean_recv_spectra(self, spec);
+	ret = self->receive(self, spec);
 	if (ret < 0)
 		return -ENODATA;
 

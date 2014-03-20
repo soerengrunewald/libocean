@@ -38,7 +38,7 @@ static int apply_spectral_coefficents(struct ocean_spectra *spec)
 }
 
 api_private
-int ocean_recv_spectra(struct ocean *self, struct ocean_spectra *spec)
+int nirquest512_recv_spectra(struct ocean *self, struct ocean_spectra *spec)
 {
 	int done = 0;
 	int ret;
