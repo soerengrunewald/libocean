@@ -83,8 +83,8 @@ static int ocean_dump_all(struct ocean *self)
 		memset(buf, 0, ARRAY_SIZE(buf));
 		ret = ocean_query_dev_info(self, i, buf, ARRAY_SIZE(buf));
 		if (ret < 0) {
-			fprintf(stderr, "ERR:%s: failed to query: 0x%x -> %s\n",
-				__func__, i, libusb_strerror(ret));
+			fprintf(stderr, "ERR:%s: failed to query: 0x%x -> %d\n",
+				__func__, i, ret);
 			continue;
 		}
 		snprintf(prefix, ARRAY_SIZE(prefix), "0pt %.2d", i);
@@ -430,15 +430,14 @@ int ocean_open(struct ocean *self, uint16_t vendor, uint16_t product)
 	 * configuration to 1 will cause the device stop working. */
 	ret = libusb_claim_interface(self->dev, 0);
 	if (ret < 0) {
-		fprintf(stderr, "ERR: libusb_claim_interface: %s\n",
-			libusb_strerror(ret));
+		fprintf(stderr, "ERR: libusb_claim_interface: %d\n", ret);
 		return -EIO;
 	}
 	/* dump the device descriptor, just for debug purposes */
 	ret = libusb_get_string_descriptor_ascii(self->dev, 1, desc, ARRAY_SIZE(desc));
 	if (ret < 0) {
-		fprintf(stderr, "ERR: libusb_get_string_descriptor_ascii: %s\n",
-			libusb_strerror(ret));
+		fprintf(stderr, "ERR: libusb_get_string_descriptor_ascii: %d\n",
+			ret);
 	} else
 		printf("Device is: %s\n", desc);
 
@@ -449,8 +448,8 @@ int ocean_open(struct ocean *self, uint16_t vendor, uint16_t product)
 
 		ret = libusb_clear_halt(self->dev, self->ep[i]);
 		if (ret < 0) {
-			fprintf(stderr, "ERR: libusb_clear_halt(ep: 0x%x): %s\n",
-				self->ep[i], libusb_strerror(ret));
+			fprintf(stderr, "ERR: libusb_clear_halt(ep: 0x%x): %d\n",
+				self->ep[i], ret);
 		}
 	}
 
