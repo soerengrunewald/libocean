@@ -554,8 +554,8 @@ int ocean_request_spectra(struct ocean *ctx, struct ocean_spectra *spec)
 		data = spectrum2;
 	}
 
-	memcpy(spec->raw, raw, spec->raw_size);
-	memcpy(spec->data, data, spec->data_size);
+	memcpy(spec->raw, raw, spec->raw_size * sizeof(*raw));
+	memcpy(spec->data, data, spec->data_size * sizeof(*data));
 
 	ctx->status.spectral_data_counter++;
 	return 0;
