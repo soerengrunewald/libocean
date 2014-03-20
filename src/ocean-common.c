@@ -410,8 +410,8 @@ int ocean_open(struct ocean *self, uint16_t vendor, uint16_t product)
 	/* try to find and open the device */
 	self->dev = libusb_open_device_with_vid_pid(self->usb, vendor, product);
 	if (self->dev == NULL) {
-		fprintf(stderr, "ERR: libusb_open_device_with_vid_pid: 0x%x:0x%x not found\n",
-			vendor, product);
+		fprintf(stderr, "ERR: libusb_open_device_with_vid_pid: 0x%x:0x%x "
+			"not found\n", vendor, product);
 		return -ENODEV;
 	}
 
