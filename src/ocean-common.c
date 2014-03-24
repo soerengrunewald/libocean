@@ -721,9 +721,16 @@ int ocean_request_spectra(struct ocean *self, struct ocean_spectra *spec)
 
 	ret = self->receive(self, spec);
 	if (ret < 0)
-		return -ENODATA;
+		goto cleanup;
 
 	return 0;
+
+cleanup:
+	ret = ocean_stop_spectral_acquisition(self);
+	if (ret < 0)
+		return ret;
+
+	return -ENODATA;
 }
 
 api_public
