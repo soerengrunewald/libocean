@@ -37,45 +37,6 @@
 extern "C" {
 #endif
 
-typedef int (*ReceiveFuncPtr)(struct ocean *, struct ocean_spectra *);
-
-struct ocean {
-	libusb_context *usb;
-	libusb_device_handle *dev;
-	uint8_t ep[4];
-	int timeout;
-	/* The function used to receive requested specrtra data */
-	ReceiveFuncPtr receive;
-};
-
-struct ocean_spectra {
-	uint8_t *raw;
-	double *data;
-	size_t raw_size;
-	size_t data_size;
-	/* spectrometer wl_cal_coef values */
-	double wl_cal_coef[4];
-	double non_lin_coef[8];
-	int poly_order_non_lin;
-	uint16_t saturation;
-};
-
-struct ocean_status {
-	uint16_t num_of_pixels;
-	uint16_t integration_time;
-	uint8_t lamp_enable;
-	uint8_t trigger_mode;
-	uint8_t request_spectrum;
-	uint8_t reserved1;
-	uint8_t specral_data_ready;
-	uint8_t reserved2;
-	uint8_t power_state;
-	uint8_t spectral_data_counter;
-	uint8_t detector_gain_select;
-	uint8_t fan_and_tec_state;
-	uint16_t reserved3;
-};
-
 enum {
 	OCEAN_DEVICE_SERIAL = 0,
 	OCEAN_WAVELEN_CAL_COEF_0,
@@ -96,6 +57,46 @@ enum {
 	OCEAN_DETECT_SERIAL,
 	OCEAN_CONFIG_PARAM_RETURN,
 	OCEAN_LAST
+};
+
+struct ocean_status {
+	uint16_t num_of_pixels;
+	uint16_t integration_time;
+	uint8_t lamp_enable;
+	uint8_t trigger_mode;
+	uint8_t request_spectrum;
+	uint8_t reserved1;
+	uint8_t specral_data_ready;
+	uint8_t reserved2;
+	uint8_t power_state;
+	uint8_t spectral_data_counter;
+	uint8_t detector_gain_select;
+	uint8_t fan_and_tec_state;
+	uint16_t reserved3;
+};
+
+struct ocean_spectra {
+	uint8_t *raw;
+	double *data;
+	size_t raw_size;
+	size_t data_size;
+	/* spectrometer wl_cal_coef values */
+	double wl_cal_coef[4];
+	double non_lin_coef[8];
+	int poly_order_non_lin;
+	uint16_t saturation;
+};
+
+typedef int (*ReceiveFuncPtr)(struct ocean *, struct ocean_spectra *);
+
+struct ocean {
+	libusb_context *usb;
+	libusb_device_handle *dev;
+	struct ocean_status status;
+	uint8_t ep[4];
+	int timeout;
+	/* The function used to receive requested specrtra data */
+	ReceiveFuncPtr receive;
 };
 
 #ifdef __cplusplus

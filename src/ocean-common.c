@@ -512,6 +512,7 @@ static int ocean_query_status(struct ocean *self, struct ocean_status *status)
 		return ret;
 	}
 
+	memcpy(&self->status, status, sizeof(*status));
 	return 0;
 }
 
@@ -624,6 +625,7 @@ int ocean_set_integration_time(struct ocean *self, uint32_t time)
 	if (ret < 0)
 		return -EIO;
 
+	self->status.integration_time = time;
 	return 0;
 }
 
