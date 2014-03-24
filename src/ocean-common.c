@@ -109,7 +109,7 @@ static void ocean_spectra_dump_coefficents(struct ocean_spectra *spec)
 	fprintf(stdout, "DBG: polynomical order of non-linearity "
 		"calibratrion: %d\n", spec->poly_order_non_lin);
 
-	for (order = 0; order < spec->poly_order_non_lin; order++) {
+	for (order = 0; order < ARRAY_SIZE(spec->non_lin_coef); order++) {
 		fprintf(stdout, "DBG: non-linearity calibration "
 			"coefficent #%d: %E\n", order, spec->non_lin_coef[order]);
 	}
@@ -148,7 +148,7 @@ static int ocean_spectra_query_coefficents(struct ocean_spectra *spec, struct oc
 	spec->poly_order_non_lin = atoi((const char *)&buf[2]);
 
 	/* query the non-linerarity correction coefficents */
-	for (order = 0; order < spec->poly_order_non_lin; order++) {
+	for (order = 0; order < ARRAY_SIZE(spec->non_lin_coef); order++) {
 		memset(buf, 0, ARRAY_SIZE(buf));
 		ret = ocean_query_dev_info(ocean, OCEAN_NON_LIN_COR_COEF_0 + order, buf, ARRAY_SIZE(buf));
 		if (ret < 0) {
