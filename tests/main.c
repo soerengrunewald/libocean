@@ -223,8 +223,12 @@ out:
 
 int main(int argc, char *argv[])
 {
+	int major = 0, minor = 0, patch = 0;
 	struct ocean *usb = NULL;
 	int ret;
+
+	ocean_get_version(&major, &minor, &patch);
+	printf("Libocean version: %d.%d.%d\n", major, minor, patch);
 
 	ret = ocean_create(&usb);
 	if (ret < 0) {

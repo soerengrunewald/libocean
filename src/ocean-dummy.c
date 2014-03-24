@@ -1,3 +1,4 @@
+#include "config.h"
 #include <libocean.h>
 
 #include <errno.h>
@@ -579,4 +580,13 @@ int ocean_get_num_of_pixel(struct ocean *ctx, uint32_t *num_of_pixel)
 
 	*num_of_pixel = (uint32_t)ctx->status.num_of_pixels;
 	return 0;
+}
+
+api_public
+int ocean_get_version(int *major, int *minor, int *patch)
+{
+	if (!major || !minor || !patch)
+		return -EINVAL;
+
+	return sscanf(PACKAGE_VERSION, "%d.%d.%d", major, minor, patch);
 }

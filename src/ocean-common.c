@@ -773,3 +773,12 @@ double ocean_spectra_get_wavelength(struct ocean_spectra *spec, int pixel_number
 
 	return spec->wl_cal_coef[0] + value;
 }
+
+api_public
+int ocean_get_version(int *major, int *minor, int *patch)
+{
+	if (!major || !minor || !patch)
+		return -EINVAL;
+
+	return sscanf(PACKAGE_VERSION, "%d.%d.%d", major, minor, patch);
+}

@@ -41,6 +41,8 @@ double *ocean_spectra_get_data(struct ocean_spectra *spec);
 double ocean_spectra_get_wavelength(struct ocean_spectra *spec, int pixel);
 
 
+int ocean_get_version(int *major, int *minor, int *patch);
+
 int ocean_create(struct ocean **ctx);
 void ocean_free(struct ocean *ctx);
 
