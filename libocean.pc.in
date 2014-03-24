@@ -8,4 +8,4 @@ Description: library to access ocean-optics usb spectrometers
 Version: @VERSION@
 Libs: -locean
 
-Requires.private: libusb >= 1.0
+Requires.private: libusb-1.0 >= 1.0.0
