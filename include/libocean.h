@@ -33,7 +33,6 @@ extern "C" {
 #endif
 
 struct ocean;
-struct ocean_status;
 struct ocean_spectra;
 
 /**
