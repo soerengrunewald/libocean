@@ -782,7 +782,7 @@ int ocean_stop_spectral_acquisition(struct ocean *self)
 }
 
 api_public
-double ocean_spectra_get_wavelength(struct ocean_spectra *spec, int pixel_number)
+double ocean_spectra_get_wavelength(struct ocean_spectra *spec, uint16_t pixel_number)
 {
 	double value = 0.0;
 	int order;

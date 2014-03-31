@@ -100,8 +100,7 @@ double *ocean_spectra_get_data(struct ocean_spectra *spec);
  * @see #ocean_spectra_get_size
  * @see #ocean_request_spectra
  */
-double ocean_spectra_get_wavelength(struct ocean_spectra *spec, int pixel);
-
+double ocean_spectra_get_wavelength(struct ocean_spectra *spec, uint16_t pixel);
 
 /**
  * Receive the version of libocean in major.minor.patch notation.

@@ -389,7 +389,7 @@ uint8_t *ocean_spectra_get_raw_data(struct ocean_spectra *spec)
 }
 
 api_public
-double ocean_spectra_get_wavelength(struct ocean_spectra *spec, int pixel)
+double ocean_spectra_get_wavelength(struct ocean_spectra *spec, uint16_t pixel)
 {
 	static const double coef[] = { 8.994393E+02, 1.624139E+00, -9.097670E-05, 3.679440E-08 };
 	double value = 0.0;
