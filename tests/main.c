@@ -159,44 +159,6 @@ out:
 }
 
 /**
- * (Hex)Dump some spectras
- */
-static int test_spectra_dump(struct ocean *usb)
-{
-	struct ocean_spectra *spec = NULL;
-	int ret, i;
-
-	ret = ocean_spectra_create(&spec, usb);
-	if (ret < 0) {
-		printf("ocean_spectra_create: %d\n", ret);
-		goto out;
-	}
-
-	for (i=0; i<3; i++) {
-		uint8_t *buf;
-		size_t len;
-
-		ret = ocean_request_spectra(usb, spec);
-		if (ret < 0) {
-			printf("ocean_request_spectra: %d\n", ret);
-			goto cleanup;
-		}
-
-		buf = ocean_spectra_get_raw_data(spec);
-		len = ocean_spectra_get_raw_size(spec);
-		hexdump(buf, len);
-
-		sleep(2); /* give it some time to integrate */
-	}
-
-cleanup:
-	ocean_spectra_free(spec);
-out:
-	return ret;
-}
-
-
-/**
  * Create a csv file from the spectra data
  */
 static int test_spectra_csv(struct ocean *usb)
@@ -263,7 +225,6 @@ int main(int argc, char *argv[])
 
 	test_query(usb);
 //	test_enable(usb);
-//	test_spectra_dump(usb);
 	test_spectra_csv(usb);
 
 out:

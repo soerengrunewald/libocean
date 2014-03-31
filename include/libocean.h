@@ -57,10 +57,6 @@ int ocean_spectra_create(struct ocean_spectra **spec, struct ocean *ctx);
  */
 void ocean_spectra_free(struct ocean_spectra *spec);
 
-/* The unprocessed raw data */
-size_t ocean_spectra_get_raw_size(struct ocean_spectra *spec);
-uint8_t *ocean_spectra_get_raw_data(struct ocean_spectra *spec);
-
 /**
  * Returns the size of the spectra. This is usually equal to the value
  * returned by {@link #ocean_get_num_of_pixel}. In some cases it can be less
@@ -245,10 +241,6 @@ int ocean_stop_spectral_acquisition(struct ocean *ctx);
  * @see #ocean_open
  */
 int ocean_get_num_of_pixel(struct ocean *ctx, uint32_t *num_of_pixel);
-
-
-/* For testing */
-int ocean_dump_status(struct ocean *self, FILE *out);
 
 #ifdef __cplusplus
 };
