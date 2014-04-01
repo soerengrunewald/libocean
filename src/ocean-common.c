@@ -378,8 +378,6 @@ int ocean_create(struct ocean **oceanp)
 	if (ret != 0)
 		return -ENODEV;
 
-//	libusb_set_debug(ctx->usb, LIBUSB_LOG_LEVEL_INFO);
-
 	*oceanp = ctx;
 	return 0;
 }
