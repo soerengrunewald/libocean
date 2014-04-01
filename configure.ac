@@ -53,7 +53,12 @@ if test "x$enable_werror" = "xyes"; then
 	CFLAGS="$CFLAGS -Werror"
 fi
 
-PKG_CHECK_MODULES(LIBUSB, [libusb-1.0])
+PKG_CHECK_MODULES(LIBUSB, [libusb-1.0 > 1.0.13], [have_libusbx=1],
+	[PKG_CHECK_MODULES(LIBUSB, [libusb-1.0], [have_libusbx=0],
+		[AC_MSG_ERROR([Unable to find libusb-1.0])])])
+
+AC_DEFINE_UNQUOTED([HAVE_LIBUSB_EXTENDED], [$have_libusbx],
+	[Whether we can use some functions from later libusb version])
 
 dnl
 dnl Gen Makefiles
