@@ -34,11 +34,6 @@
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof (x[0]))
 #endif
 
-#define EP_CMD_SEND 0
-#define EP_CMD_RECV 1
-#define EP_DATA_RECV 2
-#define EP_DATA_RECV2 3
-
 #if !defined(WIN32)
 #  if __GNUC__ >= 4
 #    define api_public __attribute__((visibility("default")))
@@ -55,6 +50,13 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+enum {
+	EP_CMD_SEND = 0,
+	EP_CMD_RECV,
+	EP_DATA_RECV,
+	EP_DATA_RECV2
+};
 
 enum {
 	OCEAN_DEVICE_SERIAL = 0,
