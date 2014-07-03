@@ -199,10 +199,6 @@ int ocean_set_integration_time(struct ocean *ctx, uint32_t time);
  */
 int ocean_get_integration_time(struct ocean *ctx, uint32_t *time);
 
-int ocean_enable_strob(struct ocean *ctx, bool enable);
-int ocean_enable_fan(struct ocean *ctx, bool enable);
-int ocean_enable_external_trigger(struct ocean *ctx, bool enable);
-
 /**
  * Cause the spectrometer to start data acquisition and store the
  * result in the given spectra structure. If you receive spectra faster
@@ -240,6 +236,11 @@ int ocean_stop_spectral_acquisition(struct ocean *ctx);
  * @see #ocean_open
  */
 int ocean_get_num_of_pixel(struct ocean *ctx, uint32_t *num_of_pixel);
+
+
+int ocean_enable_strob(struct ocean *ctx, bool enable);
+int ocean_enable_fan(struct ocean *ctx, bool enable);
+int ocean_enable_external_trigger(struct ocean *ctx, bool enable);
 
 #ifdef __cplusplus
 };
