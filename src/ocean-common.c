@@ -21,52 +21,6 @@
 
 #define MIN_RET_BUF_LEN 16
 
-struct devices {
-	uint16_t vendor;
-	uint16_t product;
-	uint8_t endpoint[4];
-	/* function to receive data from the spectrometer */
-	ReceiveFuncPtr receive;
-};
-
-extern int nirquest512_recv_spectra(struct ocean *, struct ocean_spectra *);
-extern int usb4000_recv_spectra(struct ocean *, struct ocean_spectra *);
-
-/* FIXME: This is device specific... */
-static const struct devices SUPPORTED[] = {
-	{ /* OceanOptics USB4000 */
-		.vendor = 0x2457,
-		.product = 0x1022,
-		.endpoint = {
-			(0x01 | LIBUSB_ENDPOINT_OUT),
-			(0x81 | LIBUSB_ENDPOINT_IN),
-			(0x86 | LIBUSB_ENDPOINT_IN),
-			(0x82 | LIBUSB_ENDPOINT_IN),
-		},
-		.receive = usb4000_recv_spectra,
-	}, { /* OceanOptics NirQuest512 */
-		.vendor = 0x2457,
-		.product = 0x1026,
-		.endpoint = {
-			(0x01 | LIBUSB_ENDPOINT_OUT),
-			(0x81 | LIBUSB_ENDPOINT_IN),
-			(0x82 | LIBUSB_ENDPOINT_IN),
-			0
-		},
-		.receive = nirquest512_recv_spectra,
-	}, {
-		.vendor = 0x2457,
-		.product = 0x1028,
-		.endpoint = {
-			(0x01 | LIBUSB_ENDPOINT_OUT),
-			(0x81 | LIBUSB_ENDPOINT_IN),
-			(0x82 | LIBUSB_ENDPOINT_IN),
-			0
-		},
-		.receive = nirquest512_recv_spectra,
-	}
-};
-
 static void hexdump(uint8_t *buf, size_t len, const char *prefix)
 {
 	const size_t rowsize = 16;
@@ -103,7 +57,6 @@ static void hexdump(uint8_t *buf, size_t len, const char *prefix)
 }
 
 static int ocean_query_dev_info(struct ocean *self, uint8_t what, uint8_t *buf, size_t len);
-static int ocean_query_status(struct ocean *self, struct ocean_status *status);
 
 static int ocean_dump_all(struct ocean *self)
 {
@@ -156,7 +109,8 @@ static int ocean_spectra_query_coefficents(struct ocean_spectra *spec, struct oc
 	/* query the wavelength calibration coefficents */
 	for (order = 0; order < ARRAY_SIZE(spec->wl_cal_coef); order++) {
 		memset(buf, 0, ARRAY_SIZE(buf));
-		ret = ocean_query_dev_info(ocean, OCEAN_WAVELEN_CAL_COEF_0 + order, buf, ARRAY_SIZE(buf));
+		ret = ocean_query_dev_info(ocean, OCEAN_WAVELEN_CAL_COEF_0 +
+					   order, buf, ARRAY_SIZE(buf));
 		if (ret < 0) {
 			fprintf(stderr, "ERR: Unable to query the wavelength "
 				"calibration coefficent #%d\n", order);
@@ -168,7 +122,8 @@ static int ocean_spectra_query_coefficents(struct ocean_spectra *spec, struct oc
 
 	/* query the polynomical order of non-linearity calibratrion */
 	memset(buf, 0, ARRAY_SIZE(buf));
-	ret = ocean_query_dev_info(ocean, OCEAN_POLY_ORDER_NON_LIN_COR, buf, ARRAY_SIZE(buf));
+	ret = ocean_query_dev_info(ocean, OCEAN_POLY_ORDER_NON_LIN_COR, buf,
+				   ARRAY_SIZE(buf));
 	if (ret < 0) {
 		fprintf(stderr, "ERR: Unable to query polynomical order of "
 			"non-linearity calibratrion\n");
@@ -180,7 +135,8 @@ static int ocean_spectra_query_coefficents(struct ocean_spectra *spec, struct oc
 	/* query the non-linerarity correction coefficents */
 	for (order = 0; order < ARRAY_SIZE(spec->non_lin_coef); order++) {
 		memset(buf, 0, ARRAY_SIZE(buf));
-		ret = ocean_query_dev_info(ocean, OCEAN_NON_LIN_COR_COEF_0 + order, buf, ARRAY_SIZE(buf));
+		ret = ocean_query_dev_info(ocean, OCEAN_NON_LIN_COR_COEF_0 +
+					   order, buf, ARRAY_SIZE(buf));
 		if (ret < 0) {
 			fprintf(stderr, "ERR :Unable to query the wavelength "
 				"calibration coefficent #%d\n", order);
@@ -242,18 +198,18 @@ static int ocean_spectra_create_custom(struct ocean_spectra **spec, size_t size)
 api_public
 int ocean_spectra_create(struct ocean_spectra **spec, struct ocean *ocean)
 {
-	struct ocean_status status;
+	uint32_t pixels = 0;
 	int ret;
 
 	if (!ocean)
 		return -EINVAL;
 
-	ret = ocean_query_status(ocean, &status);
+	ret = ocean->get_num_pixel(ocean, &pixels);
 	if (ret < 0)
 		return -EIO;
 
 	/* FIXME: The length needs to be larger because of the sync byte */
-	ret = ocean_spectra_create_custom(spec, (status.num_of_pixels * 2) + 2);
+	ret = ocean_spectra_create_custom(spec, (pixels * 2) + 2);
 	if (ret < 0)
 		return ret;
 
@@ -316,7 +272,8 @@ static void ocean_spectra_clear(struct ocean_spectra *spec)
 	memset(spec->data, 0, spec->data_size);
 }
 
-static int ocean_send_command(struct ocean *self, uint8_t *cmd, size_t len)
+api_private
+int ocean_send_command(struct ocean *self, uint8_t *cmd, size_t len)
 {
 	int done = 0;
 	int ret;
@@ -397,35 +354,30 @@ void ocean_free(struct ocean *self)
 	self = NULL;
 }
 
-static int ocean_supports(uint16_t vendor, uint16_t product)
+extern int nirquest512_initialize(struct ocean *, uint16_t, uint16_t);
+extern int usb4000_initialize(struct ocean *, uint16_t, uint16_t);
+
+static int ocean_init_device_specific(struct ocean *self, uint16_t vendor,
+				      uint16_t product)
 {
-	unsigned i;
+	static const struct initialize {
+		Initialize initfunc;
+	} INIT[] = {
+		{ .initfunc = nirquest512_initialize },
+		{ .initfunc = usb4000_initialize },
+	};
+	int ret, i;
 
-	for (i = 0; i < ARRAY_SIZE(SUPPORTED); i++) {
-		if (vendor == SUPPORTED[i].vendor &&
-		    product == SUPPORTED[i].product)
-			return true;
+	for (i = 0; i < ARRAY_SIZE(INIT); i++) {
+		ret = INIT[i].initfunc(self, vendor, product);
+		/* If vendor/product is not supported, try the next one */
+		if (ret == -ENODEV)
+			continue;
+		/* When the device is supported, it should be initialized
+		 * or a possible error should be reported */
+		break;
 	}
-
-	printf("WRN: %s: vendor=0x%x product=0x%x not supported\n",
-		__func__, vendor, product);
-	return false;
-}
-
-static void ocean_set_device_specifics_for(struct ocean *self,
-					   uint16_t vendor,
-					   uint16_t product)
-{
-	unsigned i;
-
-	for (i = 0; i < ARRAY_SIZE(SUPPORTED); i++) {
-		if (vendor == SUPPORTED[i].vendor &&
-		    product == SUPPORTED[i].product) {
-			memcpy(self->ep, &SUPPORTED[i].endpoint, ARRAY_SIZE(self->ep));
-			self->receive = SUPPORTED[i].receive;
-			break;
-		}
-	}
+	return ret;
 }
 
 api_public
@@ -435,7 +387,7 @@ int ocean_open(struct ocean *self, uint16_t vendor, uint16_t product)
 	int ret;
 	int i;
 
-	if (!self || !ocean_supports(vendor, product))
+	if (!self)
 		return -EINVAL;
 
 	ocean_close(self);
@@ -449,14 +401,20 @@ int ocean_open(struct ocean *self, uint16_t vendor, uint16_t product)
 	}
 
 	/* apply the device specific settings */
-	ocean_set_device_specifics_for(self, vendor, product);
+	ret = ocean_init_device_specific(self, vendor, product);
+	if (ret < 0) {
+		fprintf(stderr, "ERR: libusb_set_auto_detach_kernel_driver: %s\n",
+			libusb_strerror(ret));
+		goto cleanup;
+	}
 
 #if HAVE_LIBUSB_EXTENDED
 	ret = libusb_set_auto_detach_kernel_driver(self->dev, true);
 	if (ret < 0) {
-		fprintf(stderr, "ERR: libusb_set_auto_detach_kernel_driver: %s\n",
-			libusb_strerror(ret));
-		return -EIO;
+		fprintf(stderr, "ERR: libusb_set_auto_detach_kernel_driver: "
+			"%d -> %s\n", ret, libusb_strerror(ret));
+		ret = -EIO;
+		goto cleanup;
 	}
 #endif
 
@@ -465,8 +423,10 @@ int ocean_open(struct ocean *self, uint16_t vendor, uint16_t product)
 	 * configuration to 1 will cause the device stop working. */
 	ret = libusb_claim_interface(self->dev, 0);
 	if (ret < 0) {
-		fprintf(stderr, "ERR: libusb_claim_interface: %d\n", ret);
-		return -EIO;
+		fprintf(stderr, "ERR: libusb_claim_interface: %d -> %s\n", ret,
+			libusb_strerror(ret));
+		ret = -EIO;
+		goto cleanup;
 	}
 	/* dump the device descriptor, just for debug purposes */
 	ret = libusb_get_string_descriptor_ascii(self->dev, 1, desc, ARRAY_SIZE(desc));
@@ -492,10 +452,14 @@ int ocean_open(struct ocean *self, uint16_t vendor, uint16_t product)
 	ret = ocean_initialize(self);
 	if (ret < 0) {
 		fprintf(stderr, "ERR: %s: %s\n", __func__, strerror(-ret));
-		return -EIO;
+		goto cleanup;
 	}
 
 	return 0;
+
+cleanup:
+	ocean_close(self);
+	return ret;
 }
 
 api_public
@@ -504,9 +468,11 @@ void ocean_close(struct ocean *self)
 	if (!self || !self->dev)
 		return;
 
-	libusb_release_interface(self->dev, 0);
-	libusb_close(self->dev);
-	self->dev = NULL;
+	if (self->dev) {
+		libusb_release_interface(self->dev, 0);
+		libusb_close(self->dev);
+		self->dev = NULL;
+	}
 }
 
 api_public
@@ -521,7 +487,8 @@ int ocean_reset(struct ocean *self)
 	return 0;
 }
 
-static int ocean_query_status(struct ocean *self, struct ocean_status *status)
+api_private
+int ocean_query_status(struct ocean *self)
 {
 	uint8_t cmd[] = { 0xFE };
 	int done = 0;
@@ -532,39 +499,14 @@ static int ocean_query_status(struct ocean *self, struct ocean_status *status)
 		return -EIO;
 
 	ret = libusb_bulk_transfer(self->dev, self->ep[EP_CMD_RECV],
-				   (uint8_t *)status, sizeof(*status),
+				   (uint8_t *)self->status,
+				   sizeof(*self->status),
 				   &done, self->timeout);
 	if (ret < 0) {
 		fprintf(stderr, "ERR: usb read failed: %d (done %d/%zu)\n",
-			ret, done, sizeof(status));
+			ret, done, sizeof(*self->status));
 		return ret;
 	}
-
-	memcpy(&self->status, status, sizeof(*status));
-	return 0;
-}
-
-api_public
-int ocean_dump_status(struct ocean *self, FILE *out)
-{
-	struct ocean_status status;
-	int ret;
-
-	ret = ocean_query_status(self, &status);
-	if (ret < 0)
-		return -EIO;
-
-	fprintf(out, "query status:\n");
-	fprintf(out, "  +- num_of_pixels:........... 0x%x\n", status.num_of_pixels);
-	fprintf(out, "  +- integration_time:........ 0x%x\n", status.integration_time);
-	fprintf(out, "  +- lamp_enable:............. 0x%x\n", status.lamp_enable);
-	fprintf(out, "  +- trigger_mode:............ 0x%x\n", status.trigger_mode);
-	fprintf(out, "  +- request_spectrum:........ 0x%x\n", status.request_spectrum);
-	fprintf(out, "  +- specral_data_ready:...... 0x%x\n", status.specral_data_ready);
-	fprintf(out, "  +- power_state:............. 0x%x\n", status.power_state);
-	fprintf(out, "  +- spectral_data_counter:... 0x%x\n", status.spectral_data_counter);
-	fprintf(out, "  +- detector_gain_select:.... 0x%x\n", status.detector_gain_select);
-	fprintf(out, "  `- fan_and_tec_state:....... 0x%x\n", status.fan_and_tec_state);
 
 	return 0;
 }
@@ -636,65 +578,34 @@ int ocean_get_temperature(struct ocean *self, float *pcb, float *sink)
 api_public
 int ocean_set_integration_time(struct ocean *self, uint32_t time)
 {
-	uint8_t cmd[] = { 0x02, 0x00, 0x00, 0x00, 0x00 };
-	int ret;
+	if (!self)
+		return -EINVAL;
 
-	/* Depending on device, the integration time is given
-	 * in µs or ms. So we need to apply a correction factor */
-	if (self->receive == usb4000_recv_spectra) {
-		printf("DBG: integration time given in ms, but need µm\n");
-		time *= 1000;
-	}
-
-	/* FIXME: convert this properly depending on cpu */
-	/* TODO: Check if libusb_le16_to_cpu or libusb_cpu_to_le16
-	 *       can be used here */
-	cmd[1] = (time >>  0) & 0xFF;
-	cmd[2] = (time >>  8) & 0xFF;
-	cmd[3] = (time >> 16) & 0xFF;
-	cmd[4] = (time >> 24) & 0xFF;
-
-	ret = ocean_send_command(self, cmd, ARRAY_SIZE(cmd));
-	if (ret < 0)
-		return -EIO;
-
-	self->status.integration_time = time;
-	return 0;
+	return self->set_int_time(self, time);
 }
 
 api_public
 int ocean_get_integration_time(struct ocean *self, uint32_t *time)
 {
-	struct ocean_status status;
-	int ret;
-
-	if (!time)
+	if (!self || !time)
 		return -EINVAL;
 
-	ret = ocean_query_status(self, &status);
-	if (ret < 0)
-		return ret;
-
-	*time = (uint32_t)status.integration_time;
-	return 0;
+	return self->get_int_time(self, time);
 }
 
 api_public
 int ocean_get_num_of_pixel(struct ocean *self, uint32_t *num_of_pixel)
 {
-	struct ocean_status status;
 	int ret;
 
 	if (!num_of_pixel)
 		return -EINVAL;
 
-	ret = ocean_query_status(self, &status);
+	ret = self->get_num_pixel(self, num_of_pixel);
 	if (ret < 0)
 		return ret;
 
-	*num_of_pixel = (uint32_t)status.num_of_pixels;
 	return 0;
-
 }
 
 api_public
